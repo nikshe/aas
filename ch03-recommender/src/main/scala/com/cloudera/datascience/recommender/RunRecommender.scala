@@ -11,7 +11,6 @@ import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
 import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.SparkContext._
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.mllib.recommendation._
 import org.apache.spark.rdd.RDD
@@ -19,8 +18,8 @@ import org.apache.spark.rdd.RDD
 object RunRecommender {
 
   def main(args: Array[String]): Unit = {
-    val sc = new SparkContext(new SparkConf().setAppName("Recommender"))
-    val base = "hdfs:///user/ds/"
+    val sc = new SparkContext(new SparkConf().setMaster("spark://bigdata04:7097").setAppName("Recommender"))
+    val base = "hdfs:///data/als/"
     val rawUserArtistData = sc.textFile(base + "user_artist_data.txt")
     val rawArtistData = sc.textFile(base + "artist_data.txt")
     val rawArtistAlias = sc.textFile(base + "artist_alias.txt")
@@ -55,6 +54,12 @@ object RunRecommender {
       }
     }.collectAsMap()
 
+  /**
+   *
+   * @param rawUserArtistData
+   * @param rawArtistData
+   * @param rawArtistAlias
+   */
   def preparation(
       rawUserArtistData: RDD[String],
       rawArtistData: RDD[String],
@@ -91,6 +96,9 @@ object RunRecommender {
 
     val trainData = buildRatings(rawUserArtistData, bArtistAlias).cache()
 
+    /**
+     *
+     */
     val model = ALS.trainImplicit(trainData, 10, 5, 0.01, 1.0)
 
     trainData.unpersist()
